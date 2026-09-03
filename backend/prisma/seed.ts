@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { DEFAULT_RULE_FILTERS, DEFAULT_RULE_SECTIONS } from "../src/data/default-rules.js";
 
 const prisma = new PrismaClient();
 
@@ -15,6 +16,7 @@ const PERMS_ADMIN = [
   "customers.view",
   "coupons.manage",
   "settings.manage",
+  "rules.manage",
 ];
 const PERMS_SUPPORT = ["dashboard.view", "orders.view", "customers.view"];
 
@@ -410,6 +412,29 @@ async function main() {
       update: { value: value as object },
       create: { key, value: value as object },
     });
+  }
+
+  if ((await prisma.ruleFilter.count()) === 0) {
+    await prisma.ruleFilter.createMany({
+      data: DEFAULT_RULE_FILTERS.map((f, i) => ({ ...f, sortOrder: i, active: true })),
+    });
+  }
+  if ((await prisma.ruleSection.count()) === 0) {
+    for (const [i, section] of DEFAULT_RULE_SECTIONS.entries()) {
+      await prisma.ruleSection.create({
+        data: {
+          slug: section.slug,
+          category: section.category,
+          number: section.number,
+          title: section.title,
+          intro: "intro" in section ? section.intro ?? null : null,
+          items: section.items,
+          spec: "spec" in section && section.spec ? section.spec : undefined,
+          sortOrder: i,
+          active: true,
+        },
+      });
+    }
   }
 
   console.log("Seed Garoa RP concluído.");

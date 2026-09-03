@@ -67,6 +67,14 @@ export async function publicRoutes(app: FastifyInstance) {
     return { settings: publicSettings(settings), categories, banners };
   });
 
+  app.get("/store/rules", async () => {
+    const [filters, sections] = await Promise.all([
+      prisma.ruleFilter.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
+      prisma.ruleSection.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { number: "asc" }] }),
+    ]);
+    return { filters, sections };
+  });
+
   app.get("/store/sitemap", async (req, reply) => {
     const [products, categories] = await Promise.all([
       prisma.product.findMany({ where: { active: true }, select: { slug: true, updatedAt: true } }),
@@ -76,6 +84,7 @@ export async function publicRoutes(app: FastifyInstance) {
     const urls = [
       `${base}/`,
       `${base}/catalogo`,
+      `${base}/regras`,
       ...categories.map((c) => `${base}/categoria/${c.slug}`),
       ...products.map((p) => `${base}/produto/${p.slug}`),
     ];

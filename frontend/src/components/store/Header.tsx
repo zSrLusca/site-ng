@@ -71,6 +71,13 @@ export function Header() {
               </Link>
             );
           })}
+          <Link
+            to="/regras"
+            className={loc.pathname.startsWith("/regras") ? "active" : ""}
+            onClick={() => setOpen(false)}
+          >
+            REGRAS
+          </Link>
         </nav>
       </div>
     </header>

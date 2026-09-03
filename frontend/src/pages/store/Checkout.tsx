@@ -11,6 +11,7 @@ export function CheckoutPage() {
   const nav = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [acceptDonate, setAcceptDonate] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -31,6 +32,10 @@ export function CheckoutPage() {
     setError("");
     if (!items.length) {
       setError("Carrinho vazio.");
+      return;
+    }
+    if (!acceptDonate) {
+      setError("Confirme que a compra é uma doação e que não há reembolso.");
       return;
     }
     setLoading(true);
@@ -101,8 +106,27 @@ export function CheckoutPage() {
             </select>
           </div>
         </div>
+        <aside className="rules-donate checkout-donate" role="note">
+          <div>
+            <strong>Doação sem reembolso</strong>
+            <p>
+              O pagamento é uma doação voluntária à Nova Garoa RP. Não há estorno, cancelamento
+              ou devolução do valor.{" "}
+              <Link to="/regras/loja">Ver regra da loja</Link>
+            </p>
+          </div>
+        </aside>
+        <label className="check checkout-accept">
+          <input
+            type="checkbox"
+            checked={acceptDonate}
+            onChange={(e) => setAcceptDonate(e.target.checked)}
+            required
+          />
+          <span>Entendo que esta compra é uma doação e que não existe reembolso.</span>
+        </label>
         {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
-        <button className="btn btn-neon btn-wide" type="submit" disabled={loading || !items.length}>
+        <button className="btn btn-neon btn-wide" type="submit" disabled={loading || !items.length || !acceptDonate}>
           {loading ? "Gerando pagamento..." : "Finalizar pedido"}
         </button>
       </form>
@@ -121,7 +145,7 @@ export function CheckoutPage() {
         <div className="summary-row"><span>Desconto {coupon?.code ? `(${coupon.code})` : ""}</span><span>{formatBRL(discount)}</span></div>
         <div className="summary-row total"><span>Total</span><span>{formatBRL(total)}</span></div>
         <p className="hint">
-          O cartão é processado pelo gateway. Nenhum dado de cartão fica armazenado na Garoa.
+          Doação voluntária, sem reembolso. O cartão é processado pelo gateway. Nenhum dado de cartão fica na Garoa.
         </p>
       </aside>
     </main>

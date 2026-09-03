@@ -1,10 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { AppError, notFound, unauthorized } from "../lib/errors.js";
 import { asStringArray, requireAdmin, requirePermission } from "../plugins/auth.js";
-import { uniqueSlug } from "../utils/slug.js";
+import { slugify, uniqueSlug } from "../utils/slug.js";
 import { audit } from "../services/audit.js";
 import { getSettings, setSettings } from "../services/settings.js";
 import { getRuntimeConfig, maskAdminSettings, sanitizeSettingsPayload } from "../services/runtime.js";
@@ -751,6 +752,131 @@ export async function adminRoutes(app: FastifyInstance) {
     });
     await audit(req, "update", "admin", id);
     return { id: updated.id, name: updated.name, email: updated.email, role: updated.role, active: updated.active };
+  });
+
+  const ruleSpecSchema = z
+    .object({
+      policiaisMin: z.string().optional().default(""),
+      criminososMin: z.string().optional().default(""),
+      criminososMax: z.string().optional().default(""),
+      refensMax: z.string().optional().default(""),
+      cooldown: z.string().optional().default(""),
+      nivel: z.string().optional().default(""),
+      negociacao: z.string().optional().default(""),
+      fuga: z.string().optional().nullable(),
+    })
+    .nullable()
+    .optional();
+
+  const ruleFilterBody = z.object({
+    slug: z.string().optional(),
+    label: z.string().min(2),
+    hint: z.string().optional().default(""),
+    sortOrder: z.number().int().optional().default(0),
+    active: z.boolean().optional().default(true),
+  });
+
+  const ruleSectionBody = z.object({
+    slug: z.string().optional(),
+    category: z.string().min(1),
+    number: z.string().min(1),
+    title: z.string().min(2),
+    intro: z.string().optional().nullable(),
+    items: z.array(z.string()).optional().default([]),
+    spec: ruleSpecSchema,
+    sortOrder: z.number().int().optional().default(0),
+    active: z.boolean().optional().default(true),
+  });
+
+  app.get("/admin/rules", { preHandler: [requirePermission("rules.manage")] }, async () => {
+    const [filters, sections] = await Promise.all([
+      prisma.ruleFilter.findMany({ orderBy: { sortOrder: "asc" } }),
+      prisma.ruleSection.findMany({ orderBy: [{ sortOrder: "asc" }, { number: "asc" }] }),
+    ]);
+    return { filters, sections };
+  });
+
+  app.post("/admin/rule-filters", { preHandler: [requirePermission("rules.manage")] }, async (req) => {
+    const body = ruleFilterBody.parse(req.body);
+    const slug = body.slug
+      ? slugify(body.slug)
+      : await uniqueSlug(body.label, async (s) => !!(await prisma.ruleFilter.findUnique({ where: { slug: s } })));
+    if (!slug || slug === "todas") throw new AppError("Slug de filtro inválido.", 400);
+    const created = await prisma.ruleFilter.create({ data: { ...body, slug } });
+    await audit(req, "create", "rule_filter", created.slug, created);
+    return created;
+  });
+
+  app.put("/admin/rule-filters/:slug", { preHandler: [requirePermission("rules.manage")] }, async (req) => {
+    const { slug } = req.params as { slug: string };
+    const exists = await prisma.ruleFilter.findUnique({ where: { slug } });
+    if (!exists) throw notFound("Filtro");
+    const body = ruleFilterBody.partial().parse(req.body);
+    const updated = await prisma.ruleFilter.update({
+      where: { slug },
+      data: { label: body.label, hint: body.hint, sortOrder: body.sortOrder, active: body.active },
+    });
+    await audit(req, "update", "rule_filter", slug, body);
+    return updated;
+  });
+
+  app.delete("/admin/rule-filters/:slug", { preHandler: [requirePermission("rules.manage")] }, async (req) => {
+    const { slug } = req.params as { slug: string };
+    await prisma.ruleFilter.delete({ where: { slug } });
+    await audit(req, "delete", "rule_filter", slug);
+    return { ok: true };
+  });
+
+  app.post("/admin/rule-sections", { preHandler: [requirePermission("rules.manage")] }, async (req) => {
+    const body = ruleSectionBody.parse(req.body);
+    const slug = body.slug
+      ? slugify(body.slug)
+      : await uniqueSlug(body.title, async (s) => !!(await prisma.ruleSection.findUnique({ where: { slug: s } })));
+    const created = await prisma.ruleSection.create({
+      data: {
+        slug,
+        category: body.category,
+        number: body.number,
+        title: body.title,
+        intro: body.intro ?? null,
+        items: body.items.filter((i) => i.trim()),
+        spec: body.spec ?? undefined,
+        sortOrder: body.sortOrder,
+        active: body.active,
+      },
+    });
+    await audit(req, "create", "rule_section", created.id, created);
+    return created;
+  });
+
+  app.put("/admin/rule-sections/:id", { preHandler: [requirePermission("rules.manage")] }, async (req) => {
+    const { id } = req.params as { id: string };
+    const exists = await prisma.ruleSection.findUnique({ where: { id } });
+    if (!exists) throw notFound("Regra");
+    const body = ruleSectionBody.partial().parse(req.body);
+    const updated = await prisma.ruleSection.update({
+      where: { id },
+      data: {
+        slug: body.slug ? slugify(body.slug) : undefined,
+        category: body.category,
+        number: body.number,
+        title: body.title,
+        intro: body.intro,
+        items: body.items ? body.items.filter((i) => i.trim()) : undefined,
+        spec: body.spec === undefined ? undefined : body.spec === null ? Prisma.DbNull : body.spec,
+        sortOrder: body.sortOrder,
+        active: body.active,
+      },
+    });
+    await audit(req, "update", "rule_section", id, body);
+    return updated;
+  });
+
+  app.delete("/admin/rule-sections/:id", { preHandler: [requirePermission("rules.manage")] }, async (req) => {
+    const { id } = req.params as { id: string };
+    await prisma.ruleSection.delete({ where: { id } });
+    await audit(req, "delete", "rule_section", id);
+    return { ok: true };
   });
 
   app.post("/admin/uploads", { preHandler: [requirePermission("products.manage", "banners.manage", "settings.manage")] }, async (req) => {

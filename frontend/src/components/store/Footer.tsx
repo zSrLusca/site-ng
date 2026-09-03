@@ -10,6 +10,7 @@ export function Footer() {
         <div>
           <strong>{s?.storeName || "Garoa RP"}</strong>
           <p>{s?.footerText}</p>
+          <p>Compras no site são doações. Não há reembolso.</p>
         </div>
         <div>
           <strong>Loja</strong>
@@ -19,6 +20,8 @@ export function Footer() {
         </div>
         <div>
           <strong>Cidade</strong>
+          <p><Link to="/regras">Leis Gerais</Link></p>
+          <p><Link to="/regras/loja">Doações e reembolso</Link></p>
           {s?.discord && <p><a href={s.discord} target="_blank" rel="noreferrer">Discord</a></p>}
           {s?.contactEmail && <p>{s.contactEmail}</p>}
         </div>

@@ -293,6 +293,36 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
+model RuleFilter {
+  slug      String   @id
+  label     String
+  hint      String   @default("")
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, sortOrder])
+}
+
+model RuleSection {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  category  String
+  number    String
+  title     String
+  intro     String?
+  items     Json     @default("[]")
+  spec      Json?
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, sortOrder])
+  @@index([active, sortOrder])
+}
+
 model AuditLog {
   id       String   @id @default(cuid())
   adminId  String?

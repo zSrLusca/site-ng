@@ -7,6 +7,7 @@ import { ProductPage } from "./pages/store/Product";
 import { CartPage } from "./pages/store/Cart";
 import { CheckoutPage } from "./pages/store/Checkout";
 import { OrderPage } from "./pages/store/Order";
+import { RegrasPage } from "./pages/store/Regras";
 import { AdminLogin } from "./pages/admin/Login";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/Dashboard";
@@ -20,6 +21,7 @@ import { AdminCustomers } from "./pages/admin/Customers";
 import { AdminCoupons } from "./pages/admin/Coupons";
 import { AdminSettings } from "./pages/admin/Settings";
 import { AdminUsers } from "./pages/admin/Admins";
+import { AdminRules } from "./pages/admin/Rules";
 
 export function App() {
   return (
@@ -34,6 +36,8 @@ export function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/pedido/:number" element={<OrderPage />} />
         <Route path="/pedido/:number/sucesso" element={<OrderPage />} />
+        <Route path="/regras" element={<RegrasPage />} />
+        <Route path="/regras/:filtro" element={<RegrasPage />} />
       </Route>
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>
@@ -43,6 +47,7 @@ export function App() {
         <Route path="products/:id" element={<AdminProductForm />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="banners" element={<AdminBanners />} />
+        <Route path="rules" element={<AdminRules />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="orders/:id" element={<AdminOrderDetail />} />
         <Route path="customers" element={<AdminCustomers />} />
