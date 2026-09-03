@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560">
+  <rect width="800" height="560" fill="#07141d"/>
+  <polygon points="400,120 560,240 400,440 240,240" fill="#00d4ff" fill-opacity=".2" stroke="#00d4ff" stroke-width="6"/>
+  <text x="400" y="255" text-anchor="middle" fill="#dff6ff" font-family="Arial" font-size="34" font-weight="700">DIAMANTE</text>
+</svg>

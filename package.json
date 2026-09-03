@@ -1,0 +1,7 @@
+{
+  "name": "garoa-store",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs"
+  }
+}

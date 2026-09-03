@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: garoa-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: garoa
+      POSTGRES_PASSWORD: garoa_secret
+      POSTGRES_DB: garoa_store
+    ports:
+      - "5432:5432"
+    volumes:
+      - garoa_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U garoa -d garoa_store"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: garoa-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://garoa:garoa_secret@db:5432/garoa_store?schema=public
+      NODE_ENV: production
+      PAYMENT_DEV_MODE: "false"
+      PAYMENT_PROVIDER: mercadopago
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://loja.garoarp.com/api}
+    container_name: garoa-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  garoa_pg:
