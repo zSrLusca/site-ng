@@ -82,29 +82,29 @@ O servidor da cidade também pode puxar pendências em `GET /fivem/deliveries/pe
 
 Entregas usam chave de idempotência `pedido:item`. Webhook duplicado não entrega de novo.
 
-## Produção (VPS + Nginx)
+## Produção (VPS + XAMPP)
 
 Domínio: `novagaroa.com.br`  
-VPS: `104.234.63.151`
+VPS: `104.234.63.151` (Windows + XAMPP)
 
-No DNS do domínio, crie:
+O XAMPP só serve o site (Apache). A loja em si é **Node + SQLite**. Não use o MySQL do XAMPP.
+
+No DNS:
 
 | Tipo | Nome | Valor            |
 |------|------|------------------|
 | A    | @    | 104.234.63.151   |
 | A    | www  | 104.234.63.151   |
 
-1. Na VPS: `git clone https://github.com/zSrLusca/site-ng.git && cd site-ng`
-2. Copie `backend/.env.vps.example` para `backend/.env`. Mantenha `DATABASE_URL=file:./dev.db`. Gere `JWT_SECRET` e senha do admin novos.
-3. URLs da loja:
-   - `APP_URL=https://novagaroa.com.br`
-   - `API_URL=https://novagaroa.com.br/api`
-   - `ALLOWED_ORIGINS=https://novagaroa.com.br,https://www.novagaroa.com.br`
-   - `FIVEM_API_URL=http://104.234.63.151:30120/ng-loja`
-4. Copie o Nginx: `sudo cp nginx/garoa.conf /etc/nginx/sites-available/novagaroa.conf` e ative o site.
-5. `docker compose up -d --build`
-6. Quando o DNS resolver: `sudo certbot --nginx -d novagaroa.com.br -d www.novagaroa.com.br`
-7. Webhook no Mercado Pago: `https://novagaroa.com.br/api/webhooks/payment`
+1. Instale **Node.js 20+** na VPS.
+2. `git clone https://github.com/zSrLusca/site-ng.git` (ex.: `C:\site-ng`).
+3. Copie `backend/.env.vps.example` para `backend/.env`. Mantenha `DATABASE_URL=file:./dev.db`.
+4. No `backend`: `npm install` e `npx prisma db push` (e `npm run db:seed` na primeira vez).
+5. Suba a API: `scripts\start-api-vps.cmd` (fica em `127.0.0.1:3333`).
+6. No `frontend`: `npm install` e `npm run build` (sem `VITE_API_URL`, para usar `/api` no mesmo domínio).
+7. Copie `frontend\dist\*` para `C:\xampp\htdocs\novagaroa`.
+8. No Apache do XAMPP, ative `proxy`, `proxy_http`, `rewrite` e inclua `apache/novagaroa.conf`. Reinicie o Apache.
+9. Webhook no Mercado Pago: `https://novagaroa.com.br/api/webhooks/payment`
 
 Nunca coloque token, senha ou API key no frontend.
 
