@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { DEFAULT_STORE_TERMS } from "../data/default-terms.js";
 
 export const DEFAULT_SETTINGS: Record<string, unknown> = {
   storeName: "Garoa RP",
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: Record<string, unknown> = {
   seoTitle: "Garoa RP — Loja Oficial",
   seoDescription:
     "Loja oficial da Garoa RP. Compre VIP, diamantes, veículos, negócios e acessórios com pagamento via Pix ou cartão.",
+  storeTerms: DEFAULT_STORE_TERMS,
   paymentProvider: "mercadopago",
   paymentDevMode: false,
   appUrl: "",
@@ -84,6 +86,7 @@ export function publicSettings(all: Record<string, unknown>) {
     playerIdLabel,
     seoTitle,
     seoDescription,
+    storeTerms,
   } = all;
   return {
     storeName,
@@ -105,5 +108,6 @@ export function publicSettings(all: Record<string, unknown>) {
     playerIdLabel,
     seoTitle,
     seoDescription,
+    storeTerms: storeTerms || DEFAULT_STORE_TERMS,
   };
 }

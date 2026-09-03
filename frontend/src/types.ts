@@ -18,6 +18,7 @@ export type Settings = {
   playerIdLabel: string;
   seoTitle: string;
   seoDescription: string;
+  storeTerms?: string;
 };
 
 export type Category = {

@@ -78,6 +78,13 @@ export function Header() {
           >
             REGRAS
           </Link>
+          <Link
+            to="/termos"
+            className={loc.pathname === "/termos" ? "active" : ""}
+            onClick={() => setOpen(false)}
+          >
+            TERMOS
+          </Link>
         </nav>
       </div>
     </header>

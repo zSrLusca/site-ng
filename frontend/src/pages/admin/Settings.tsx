@@ -93,6 +93,15 @@ export function AdminSettings() {
           <Field label="Rótulo do ID do jogador"><input value={String(form.playerIdLabel ?? "")} onChange={(e) => set("playerIdLabel", e.target.value)} /></Field>
           <div className="field span-2"><label>Descrição SEO</label><textarea value={String(form.seoDescription ?? "")} onChange={(e) => set("seoDescription", e.target.value)} /></div>
           <div className="field span-2"><label>Texto do rodapé</label><textarea value={String(form.footerText ?? "")} onChange={(e) => set("footerText", e.target.value)} /></div>
+          <div className="field span-2">
+            <label>Termos de compra e doação</label>
+            <textarea
+              rows={14}
+              value={String(form.storeTerms ?? "")}
+              onChange={(e) => set("storeTerms", e.target.value)}
+            />
+            <small style={{ color: "#8b9bb4" }}>Aparece em /termos. O checkout exige o aceite deste texto.</small>
+          </div>
         </div>
         <div className="form-grid">
           <Field label="Logo">

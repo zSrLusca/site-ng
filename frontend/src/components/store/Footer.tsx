@@ -21,6 +21,7 @@ export function Footer() {
         <div>
           <strong>Cidade</strong>
           <p><Link to="/regras">Leis Gerais</Link></p>
+          <p><Link to="/termos">Termos de compra</Link></p>
           <p><Link to="/regras/loja">Doações e reembolso</Link></p>
           {s?.discord && <p><a href={s.discord} target="_blank" rel="noreferrer">Discord</a></p>}
           {s?.contactEmail && <p>{s.contactEmail}</p>}

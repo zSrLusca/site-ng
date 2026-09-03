@@ -8,6 +8,7 @@ import { CartPage } from "./pages/store/Cart";
 import { CheckoutPage } from "./pages/store/Checkout";
 import { OrderPage } from "./pages/store/Order";
 import { RegrasPage } from "./pages/store/Regras";
+import { TermosPage } from "./pages/store/Termos";
 import { AdminLogin } from "./pages/admin/Login";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/Dashboard";
@@ -38,6 +39,7 @@ export function App() {
         <Route path="/pedido/:number/sucesso" element={<OrderPage />} />
         <Route path="/regras" element={<RegrasPage />} />
         <Route path="/regras/:filtro" element={<RegrasPage />} />
+        <Route path="/termos" element={<TermosPage />} />
       </Route>
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>

@@ -11,7 +11,7 @@ export function CheckoutPage() {
   const nav = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [acceptDonate, setAcceptDonate] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -34,8 +34,8 @@ export function CheckoutPage() {
       setError("Carrinho vazio.");
       return;
     }
-    if (!acceptDonate) {
-      setError("Confirme que a compra é uma doação e que não há reembolso.");
+    if (!acceptTerms) {
+      setError("Aceite os termos de compra e doação para continuar.");
       return;
     }
     setLoading(true);
@@ -43,6 +43,7 @@ export function CheckoutPage() {
       const res = await api.post("/store/checkout", {
         ...form,
         couponCode: coupon?.code,
+        acceptedTerms: true,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       });
       clear();
@@ -110,23 +111,25 @@ export function CheckoutPage() {
           <div>
             <strong>Doação sem reembolso</strong>
             <p>
-              O pagamento é uma doação voluntária à Nova Garoa RP. Não há estorno, cancelamento
-              ou devolução do valor.{" "}
-              <Link to="/regras/loja">Ver regra da loja</Link>
+              O pagamento é uma doação voluntária. Não há estorno. Leia os{" "}
+              <Link to="/termos" target="_blank" rel="noreferrer">termos de compra</Link> antes de pagar.
             </p>
           </div>
         </aside>
         <label className="check checkout-accept">
           <input
             type="checkbox"
-            checked={acceptDonate}
-            onChange={(e) => setAcceptDonate(e.target.checked)}
+            checked={acceptTerms}
+            onChange={(e) => setAcceptTerms(e.target.checked)}
             required
           />
-          <span>Entendo que esta compra é uma doação e que não existe reembolso.</span>
+          <span>
+            Li e aceito os <Link to="/termos" target="_blank" rel="noreferrer">Termos de compra e doação</Link>.
+            Sei que não existe reembolso.
+          </span>
         </label>
         {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
-        <button className="btn btn-neon btn-wide" type="submit" disabled={loading || !items.length || !acceptDonate}>
+        <button className="btn btn-neon btn-wide" type="submit" disabled={loading || !items.length || !acceptTerms}>
           {loading ? "Gerando pagamento..." : "Finalizar pedido"}
         </button>
       </form>

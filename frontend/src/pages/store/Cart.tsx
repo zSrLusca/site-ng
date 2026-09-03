@@ -66,7 +66,7 @@ export function CartPage() {
         <div className="summary-row"><span>Desconto</span><span>{formatBRL(discount)}</span></div>
         <div className="summary-row total"><span>Total</span><span>{formatBRL(total)}</span></div>
         <p className="hint">
-          Compras no site são doações. Não há reembolso. <Link to="/regras/loja">Leis da loja</Link>
+          Compras no site são doações. Não há reembolso. <Link to="/termos">Ler termos</Link>
         </p>
         <Link to="/checkout" className="btn btn-neon btn-wide" style={{ marginTop: 14 }}>
           Ir para checkout

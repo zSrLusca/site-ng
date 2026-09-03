@@ -822,6 +822,12 @@ th { color: var(--muted); font-size: .75rem; letter-spacing: .06em; }
   font-size: 0.82rem;
   font-weight: 800;
 }
+.terms-doc {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+  color: #d5deea;
+}
 .checkout-donate { margin: 4px 0 12px; }
 .checkout-accept { margin-bottom: 14px; align-items: flex-start; }
 .checkout-accept span { font-weight: 700; line-height: 1.4; }

@@ -85,6 +85,7 @@ export async function publicRoutes(app: FastifyInstance) {
       `${base}/`,
       `${base}/catalogo`,
       `${base}/regras`,
+      `${base}/termos`,
       ...categories.map((c) => `${base}/categoria/${c.slug}`),
       ...products.map((p) => `${base}/produto/${p.slug}`),
     ];
@@ -246,6 +247,7 @@ ${urls.map((u) => `<url><loc>${u}</loc></url>`).join("\n")}
         cpf: z.string().optional(),
         couponCode: z.string().optional(),
         paymentMethod: z.enum(["pix", "credit_card"]),
+        acceptedTerms: z.literal(true, { errorMap: () => ({ message: "Aceite os termos de compra e doação para continuar." }) }),
         items: z.array(z.object({ productId: z.string(), quantity: z.number().int().min(1) })).min(1),
       })
       .parse(req.body);
@@ -254,7 +256,8 @@ ${urls.map((u) => `<url><loc>${u}</loc></url>`).join("\n")}
       throw new AppError("CPF é obrigatório para o pagamento.", 400);
     }
 
-    return createCheckout(body);
+    const { acceptedTerms: _accepted, ...checkout } = body;
+    return createCheckout(checkout);
   });
 
   app.get("/store/orders/:number", async (req) => {

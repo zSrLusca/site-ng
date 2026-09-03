@@ -149,6 +149,7 @@ export function sanitizeSettingsPayload(body: Record<string, unknown>, current: 
     "playerIdLabel",
     "seoTitle",
     "seoDescription",
+    "storeTerms",
     "appUrl",
     "apiUrl",
     "allowedOrigins",
