@@ -78,7 +78,7 @@ curl -X POST http://localhost:3333/webhooks/dev-confirm ^
 
 ## FiveM
 
-Configure `FIVEM_API_URL` e `FIVEM_API_KEY`. A loja chama `POST {FIVEM_API_URL}/deliveries` com a API key. Sem essas variáveis, a entrega é registrada no banco como concluída em fila (sem comando no servidor).
+Configure `FIVEM_API_URL=http://104.234.63.151:30120/ng-loja` e `FIVEM_API_KEY`. A loja chama `POST {FIVEM_API_URL}/deliveries` com a API key. Sem essas variáveis, a entrega é registrada no banco como concluída em fila (sem comando no servidor).
 
 O servidor da cidade também pode puxar pendências em `GET /fivem/deliveries/pending` com header `X-Api-Key`.
 
@@ -86,11 +86,27 @@ Entregas usam chave de idempotência `pedido:item`. Webhook duplicado não entre
 
 ## Produção (VPS + Nginx)
 
-1. Copie `.env.example` para `backend/.env` com `NODE_ENV=production`, `JWT_SECRET` forte e `PAYMENT_DEV_MODE=false`.
-2. Ajuste `nginx/garoa.conf` com o domínio e certificados HTTPS.
-3. `docker compose up -d --build`
-4. Aponte o DNS (Cloudflare) para a VPS.
-5. Entre em `/admin/settings` e vincule o Mercado Pago + URLs públicas HTTPS.
+Domínio: `novagaroa.com.br`  
+VPS: `104.234.63.151`
+
+No DNS do domínio, crie:
+
+| Tipo | Nome | Valor            |
+|------|------|------------------|
+| A    | @    | 104.234.63.151   |
+| A    | www  | 104.234.63.151   |
+
+1. Na VPS: `git clone https://github.com/zSrLusca/site-ng.git && cd site-ng`
+2. Copie `.env.example` para `backend/.env` com `NODE_ENV=production`, `JWT_SECRET` forte e `PAYMENT_DEV_MODE=false`.
+3. URLs da loja:
+   - `APP_URL=https://novagaroa.com.br`
+   - `API_URL=https://novagaroa.com.br/api`
+   - `ALLOWED_ORIGINS=https://novagaroa.com.br,https://www.novagaroa.com.br`
+   - `FIVEM_API_URL=http://104.234.63.151:30120/ng-loja`
+4. Copie o Nginx: `sudo cp nginx/garoa.conf /etc/nginx/sites-available/novagaroa.conf` e ative o site.
+5. `docker compose up -d --build`
+6. Quando o DNS resolver: `sudo certbot --nginx -d novagaroa.com.br -d www.novagaroa.com.br`
+7. Webhook no Mercado Pago: `https://novagaroa.com.br/api/webhooks/payment`
 
 Nunca coloque token, senha ou API key no frontend.
 

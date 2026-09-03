@@ -43,7 +43,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://loja.garoarp.com/api}
+        VITE_API_URL: ${VITE_API_URL:-https://novagaroa.com.br/api}
     container_name: garoa-web
     restart: unless-stopped
     depends_on:
