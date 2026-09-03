@@ -7,9 +7,7 @@ Plataforma de e-commerce da cidade Garoa RP: catálogo, carrinho, checkout, Pix/
 ```
 Frontend (React + TypeScript + Vite)
         ↓
-Backend (Fastify + Prisma)
-        ↓
-PostgreSQL
+Backend (Fastify + Prisma + SQLite)
         ↓
 PaymentProvider (Mercado Pago)
         ↓
@@ -21,7 +19,7 @@ O código do gateway fica isolado em `backend/src/payments`. A entrega FiveM fic
 ## Requisitos
 
 - Node.js 20+
-- Docker (PostgreSQL) **ou** PostgreSQL 16 local
+- SQLite (arquivo `backend/prisma/dev.db` — sem servidor de banco)
 
 ## Desenvolvimento
 
@@ -40,7 +38,7 @@ npm install
 npm run dev
 ```
 
-Para produção com PostgreSQL na VPS, use `docker compose` e altere o `provider` em `backend/prisma/schema.prisma` para `postgresql`.
+O banco é sempre SQLite (`DATABASE_URL=file:./dev.db`), no PC e na VPS.
 
 Loja: http://localhost:5173  
 Admin: http://localhost:5173/admin
@@ -97,7 +95,7 @@ No DNS do domínio, crie:
 | A    | www  | 104.234.63.151   |
 
 1. Na VPS: `git clone https://github.com/zSrLusca/site-ng.git && cd site-ng`
-2. Copie `.env.example` para `backend/.env` com `NODE_ENV=production`, `JWT_SECRET` forte e `PAYMENT_DEV_MODE=false`.
+2. Copie `backend/.env.vps.example` para `backend/.env`. Mantenha `DATABASE_URL=file:./dev.db`. Gere `JWT_SECRET` e senha do admin novos.
 3. URLs da loja:
    - `APP_URL=https://novagaroa.com.br`
    - `API_URL=https://novagaroa.com.br/api`
