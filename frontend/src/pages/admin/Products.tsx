@@ -50,7 +50,16 @@ export function AdminProducts() {
               <tr key={p.id}>
                 <td>{p.name}<div style={{ color: "#8b9bb4", fontSize: 12 }}>{p.slug}</div></td>
                 <td>{p.category?.name}</td>
-                <td>{formatBRL(p.promoPriceCents || p.priceCents)}</td>
+                <td>
+                  {p.promoPriceCents ? (
+                    <>
+                      <s style={{ color: "#8b9bb4" }}>{formatBRL(p.priceCents)}</s>
+                      <div>{formatBRL(p.promoPriceCents)}</div>
+                    </>
+                  ) : (
+                    formatBRL(p.priceCents)
+                  )}
+                </td>
                 <td>{p.unlimited ? "Ilimitado" : p.stock}</td>
                 <td><span className={`tag ${p.active ? "ok" : "bad"}`}>{p.active ? "Ativo" : "Off"}</span></td>
                 <td className="row-actions">

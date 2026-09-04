@@ -655,6 +655,15 @@ h1 { margin: 0 0 16px; font-size: clamp(1.4rem, 2vw, 1.9rem); }
 .admin-error p { margin: 0; line-height: 1.45; }
 .admin-error ul { margin: 8px 0 0; padding-left: 18px; }
 .admin-error li { margin: 0 0 4px; }
+.admin-ok {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(62, 224, 162, 0.4);
+  background: rgba(62, 224, 162, 0.1);
+  color: var(--ok);
+  font-weight: 700;
+}
 .page-toolbar {
   display: flex;
   flex-wrap: wrap;

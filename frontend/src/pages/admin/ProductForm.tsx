@@ -1,10 +1,10 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, assetUrl } from "../../api";
 import { AdminError } from "../../components/admin/AdminError";
 import { useAuth } from "../../store/auth";
-import { reaisToCents } from "../../lib/money";
+import { formatBRL, reaisToCents } from "../../lib/money";
 
 const VIP_LEVELS = [
   { id: "select", label: "Select" },
@@ -156,9 +156,11 @@ function buildPayload(form: typeof empty): Payload {
 export function AdminProductForm() {
   const { id } = useParams();
   const nav = useNavigate();
+  const qc = useQueryClient();
   const token = useAuth((s) => s.token)!;
   const [form, setForm] = useState(empty);
   const [error, setError] = useState<unknown>(null);
+  const [ok, setOk] = useState("");
   const cats = useQuery({ queryKey: ["admin-cats"], queryFn: () => api.authGet("/admin/categories", token) });
   const settings = useQuery({ queryKey: ["admin-settings"], queryFn: () => api.authGet("/admin/settings", token) });
   const product = useQuery({
@@ -195,6 +197,7 @@ export function AdminProductForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setOk("");
     if (form.grantDiscord && !mappedRole) {
       setError("Informe o ID do cargo Discord ou escolha um VIP com cargo mapeado em Configurações.");
       return;
@@ -245,9 +248,20 @@ export function AdminProductForm() {
       images: form.images,
     };
     try {
-      if (id && id !== "new") await api.put(`/admin/products/${id}`, body, token);
-      else await api.post("/admin/products", body, token);
-      nav("/admin/products");
+      const saved = id && id !== "new"
+        ? await api.put(`/admin/products/${id}`, body, token)
+        : await api.post("/admin/products", body, token);
+      setForm(fromProduct(saved));
+      qc.setQueryData(["admin-product", saved.id], saved);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-products"] }),
+        qc.invalidateQueries({ queryKey: ["admin-product"] }),
+        qc.invalidateQueries({ queryKey: ["bootstrap"] }),
+        qc.invalidateQueries({ queryKey: ["catalog"] }),
+        qc.invalidateQueries({ queryKey: ["products"] }),
+      ]);
+      setOk(`Produto salvo. Preço ${formatBRL(saved.priceCents)}${saved.promoPriceCents ? ` · promo ${formatBRL(saved.promoPriceCents)}` : ""}.`);
+      if (!id || id === "new") nav(`/admin/products/${saved.id}`, { replace: true });
     } catch (err) {
       setError(err);
     }
@@ -257,9 +271,13 @@ export function AdminProductForm() {
     <form className="admin-page" onSubmit={onSubmit}>
       <div className="page-toolbar">
         <h1>{id === "new" || !id ? "Novo produto" : "Editar produto"}</h1>
-        <button className="btn btn-primary" type="submit">Salvar produto</button>
+        <div className="row-actions">
+          <Link to="/admin/products" className="btn btn-ghost">Voltar</Link>
+          <button className="btn btn-primary" type="submit">Salvar produto</button>
+        </div>
       </div>
       <AdminError error={error} />
+      {ok && <p className="admin-ok">{ok}</p>}
 
       <section className="form-section">
         <h2>Loja</h2>
