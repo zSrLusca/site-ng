@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../api";
+import { api, assetUrl } from "../../api";
+import { AdminError } from "../../components/admin/AdminError";
 import { useAuth } from "../../store/auth";
 import { reaisToCents } from "../../lib/money";
 
@@ -157,7 +158,7 @@ export function AdminProductForm() {
   const nav = useNavigate();
   const token = useAuth((s) => s.token)!;
   const [form, setForm] = useState(empty);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const cats = useQuery({ queryKey: ["admin-cats"], queryFn: () => api.authGet("/admin/categories", token) });
   const settings = useQuery({ queryKey: ["admin-settings"], queryFn: () => api.authGet("/admin/settings", token) });
   const product = useQuery({
@@ -182,13 +183,18 @@ export function AdminProductForm() {
   }
 
   async function upload(file: File) {
-    const res = await api.upload(file, "products", token);
-    setForm((f) => ({ ...f, images: [...f.images, { url: res.url }] }));
+    setError(null);
+    try {
+      const res = await api.upload(file, "products", token);
+      setForm((f) => ({ ...f, images: [...f.images, { url: res.url }] }));
+    } catch (err) {
+      setError(err);
+    }
   }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("");
+    setError(null);
     if (form.grantDiscord && !mappedRole) {
       setError("Informe o ID do cargo Discord ou escolha um VIP com cargo mapeado em Configurações.");
       return;
@@ -243,7 +249,7 @@ export function AdminProductForm() {
       else await api.post("/admin/products", body, token);
       nav("/admin/products");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      setError(err);
     }
   }
 
@@ -253,6 +259,7 @@ export function AdminProductForm() {
         <h1>{id === "new" || !id ? "Novo produto" : "Editar produto"}</h1>
         <button className="btn btn-primary" type="submit">Salvar produto</button>
       </div>
+      <AdminError error={error} />
 
       <section className="form-section">
         <h2>Loja</h2>
@@ -299,13 +306,21 @@ export function AdminProductForm() {
         <div className="field">
           <label>Imagens</label>
           <label className="file-btn">
-            <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) void upload(file);
+              }}
+            />
             Enviar imagem
           </label>
           <div className="thumb-row">
             {form.images.map((img, i) => (
-              <div className="thumb" key={img.url}>
-                <img src={img.url} alt="" />
+              <div className="thumb" key={`${img.url}-${i}`}>
+                <img src={assetUrl(img.url)} alt="" />
                 <button type="button" onClick={() => setForm({ ...form, images: form.images.filter((_, x) => x !== i) })}>×</button>
               </div>
             ))}
@@ -415,7 +430,7 @@ export function AdminProductForm() {
         )}
       </section>
 
-      {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
+      <AdminError error={error} />
       <button className="btn btn-primary" type="submit">Salvar produto</button>
     </form>
   );

@@ -7,18 +7,39 @@ function url(path: string) {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
-    super(message);
+  details: string[];
+  constructor(message: string, status: number, details: string[] = []) {
+    const extra = details.filter(Boolean);
+    super(extra.length ? [message, ...extra].join("\n") : message);
     this.status = status;
+    this.details = extra;
   }
+}
+
+function asDetails(data: Record<string, unknown>): string[] {
+  const raw = data.details;
+  if (Array.isArray(raw)) {
+    return raw.map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "message" in item) return String((item as { message: string }).message);
+      return JSON.stringify(item);
+    }).filter(Boolean);
+  }
+  return [];
 }
 
 async function parse(res: Response) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(data.message || "Erro na requisição", res.status);
+    throw new ApiError(data.message || "Erro na requisição", res.status, asDetails(data));
   }
   return data;
+}
+
+export function formatApiError(err: unknown) {
+  if (err instanceof ApiError) return { message: err.message.split("\n")[0] || err.message, details: err.details };
+  if (err instanceof Error) return { message: err.message, details: [] as string[] };
+  return { message: "Erro inesperado.", details: [] as string[] };
 }
 
 export function assetUrl(path?: string | null) {

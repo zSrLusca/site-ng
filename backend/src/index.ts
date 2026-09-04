@@ -9,7 +9,8 @@ import cookie from "@fastify/cookie";
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import { env, isProd } from "./env.js";
-import { AppError } from "./lib/errors.js";
+import { ZodError } from "zod";
+import { AppError, prismaToAppError, zodDetails } from "./lib/errors.js";
 import { getRuntimeConfig, SECRET_SETTING_KEYS } from "./services/runtime.js";
 import { prisma } from "./lib/prisma.js";
 import { publicRoutes } from "./routes/public.js";
@@ -60,24 +61,44 @@ async function main() {
   });
 
   app.setErrorHandler((error, req, reply) => {
+    const admin = String(req.url || "").includes("/admin");
+
     if (error instanceof AppError) {
       return reply.status(error.statusCode).send({
         error: error.code,
         message: error.message,
+        details: error.details,
+      });
+    }
+    if (error instanceof ZodError) {
+      const details = zodDetails(error);
+      return reply.status(400).send({
+        error: "VALIDATION",
+        message: details[0] || "Dados inválidos.",
+        details,
       });
     }
     if (error.validation) {
       return reply.status(400).send({
         error: "VALIDATION",
         message: "Dados inválidos.",
-        details: error.validation,
+        details: error.validation.map((v) => v.message || JSON.stringify(v)),
+      });
+    }
+    const prismaError = prismaToAppError(error);
+    if (prismaError) {
+      return reply.status(prismaError.statusCode).send({
+        error: prismaError.code,
+        message: prismaError.message,
+        details: prismaError.details,
       });
     }
     req.log.error(error);
     const status = (error as { statusCode?: number }).statusCode || 500;
     return reply.status(status).send({
       error: "INTERNAL",
-      message: isProd ? "Erro interno." : error.message,
+      message: admin || !isProd ? error.message || "Erro interno." : "Erro interno.",
+      details: admin ? [error.message].filter(Boolean) : undefined,
     });
   });
 

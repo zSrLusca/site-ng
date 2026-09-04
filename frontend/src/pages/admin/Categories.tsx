@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api";
+import { AdminError } from "../../components/admin/AdminError";
 import { useAuth } from "../../store/auth";
 
 type Cat = {
@@ -23,6 +24,7 @@ export function AdminCategories() {
   const q = useQuery({ queryKey: ["admin-cats"], queryFn: () => api.authGet("/admin/categories", token) });
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   const save = useMutation({
     mutationFn: () =>
@@ -34,7 +36,9 @@ export function AdminCategories() {
       qc.invalidateQueries({ queryKey: ["bootstrap"] });
       setForm(empty);
       setEditId(null);
+      setError(null);
     },
+    onError: (err) => setError(err),
   });
   const del = useMutation({
     mutationFn: (id: string) => api.del(`/admin/categories/${id}`, token),
@@ -49,6 +53,7 @@ export function AdminCategories() {
   return (
     <div className="admin-page">
       <h1>Categorias</h1>
+      <AdminError error={error} />
       <form onSubmit={onSubmit} className="form-section">
         <div className="form-grid">
           <div className="field"><label>Nome</label><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>

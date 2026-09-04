@@ -8,7 +8,12 @@ export function formatBRL(cents: number) {
 }
 
 export function reaisToCents(value: string) {
-  const n = Number(value.replace(/\./g, "").replace(",", "."));
+  const raw = value.trim();
+  if (!raw) return 0;
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw;
+  const n = Number(normalized);
   if (Number.isNaN(n)) return 0;
   return Math.round(n * 100);
 }

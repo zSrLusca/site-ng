@@ -643,6 +643,18 @@ h1 { margin: 0 0 16px; font-size: clamp(1.4rem, 2vw, 1.9rem); }
   padding: 22px var(--page-pad) 50px;
 }
 .admin-page { width: 100%; max-width: 100%; min-width: 0; }
+.admin-error {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 93, 115, 0.45);
+  background: rgba(255, 93, 115, 0.1);
+  color: #ffd5db;
+}
+.admin-error strong { display: block; color: var(--danger); margin-bottom: 6px; }
+.admin-error p { margin: 0; line-height: 1.45; }
+.admin-error ul { margin: 8px 0 0; padding-left: 18px; }
+.admin-error li { margin: 0 0 4px; }
 .page-toolbar {
   display: flex;
   flex-wrap: wrap;

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, assetUrl } from "../../api";
+import { AdminError } from "../../components/admin/AdminError";
 import { useAuth } from "../../store/auth";
 
 type Banner = {
@@ -34,7 +35,7 @@ export function AdminBanners() {
   const q = useQuery({ queryKey: ["admin-banners"], queryFn: () => api.authGet("/admin/banners", token) as Promise<Banner[]> });
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [uploading, setUploading] = useState(false);
 
   const payload = {
@@ -55,9 +56,9 @@ export function AdminBanners() {
       qc.invalidateQueries({ queryKey: ["bootstrap"] });
       setForm(empty);
       setEditId(null);
-      setError("");
+      setError(null);
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Falha ao salvar o banner"),
+    onError: (err) => setError(err),
   });
 
   const del = useMutation({
@@ -69,13 +70,13 @@ export function AdminBanners() {
   });
 
   async function upload(file: File) {
-    setError("");
+    setError(null);
     setUploading(true);
     try {
       const res = await api.upload(file, "banners", token);
       setForm((f) => ({ ...f, image: res.url }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao enviar a imagem");
+      setError(err);
     } finally {
       setUploading(false);
     }
@@ -125,13 +126,13 @@ export function AdminBanners() {
         <div className="check-row">
           <label className="check"><input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} /> Ativo</label>
         </div>
-        {error && <p className="hint" style={{ color: "var(--danger)" }}>{error}</p>}
+        <AdminError error={error} />
         <div className="row-actions">
           <button className="btn btn-primary" type="submit" disabled={save.isPending || uploading}>
             {editId ? "Salvar" : "Criar banner"}
           </button>
           {editId && (
-            <button type="button" className="btn btn-ghost" onClick={() => { setEditId(null); setForm(empty); setError(""); }}>
+            <button type="button" className="btn btn-ghost" onClick={() => { setEditId(null); setForm(empty); setError(null); }}>
               Cancelar
             </button>
           )}
@@ -154,7 +155,7 @@ export function AdminBanners() {
                 <td>{b.sortOrder}</td>
                 <td><span className={`tag ${b.active ? "ok" : "bad"}`}>{b.active ? "Ativo" : "Off"}</span></td>
                 <td className="row-actions">
-                  <button type="button" className="btn btn-ghost" onClick={() => { setEditId(b.id); setForm(toForm(b)); setError(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => { setEditId(b.id); setForm(toForm(b)); setError(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar</button>
                   <button type="button" className="btn btn-ghost" onClick={() => { if (confirm(`Excluir "${b.title}"?`)) del.mutate(b.id); }}>Excluir</button>
                 </td>
               </tr>

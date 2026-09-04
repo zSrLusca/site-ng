@@ -4,29 +4,36 @@ import path from "node:path";
 import { AppError } from "../lib/errors.js";
 import { env } from "../env.js";
 
-const ALLOWED: Record<string, string> = {
+const ALLOWED_MIME: Record<string, string> = {
   "image/jpeg": ".jpg",
+  "image/jpg": ".jpg",
+  "image/pjpeg": ".jpg",
   "image/png": ".png",
+  "image/x-png": ".png",
   "image/webp": ".webp",
   "image/gif": ".gif",
   "image/svg+xml": ".svg",
+  "image/svg": ".svg",
   "image/x-icon": ".ico",
   "image/vnd.microsoft.icon": ".ico",
+  "image/ico": ".ico",
+  "image/icon": ".ico",
 };
+
+const ALLOWED_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".ico"]);
 
 export async function saveUpload(
   file: { filename: string; mimetype: string; toBuffer: () => Promise<Buffer> },
   folder: string,
 ) {
-  const extFromMime = ALLOWED[file.mimetype];
-  const extFromName = path.extname(file.filename).toLowerCase();
-  const allowedExt = Object.values(ALLOWED);
+  const mime = String(file.mimetype || "").toLowerCase();
+  const extFromName = path.extname(file.filename || "").toLowerCase();
+  const extFromMime = ALLOWED_MIME[mime];
+  const ext = extFromMime || (ALLOWED_EXT.has(extFromName) ? (extFromName === ".jpeg" ? ".jpg" : extFromName) : "");
 
-  if (!extFromMime || !allowedExt.includes(extFromName) && !extFromMime) {
-    throw new AppError("Tipo de arquivo não permitido.", 400, "INVALID_FILE");
+  if (!ext) {
+    throw new AppError("Tipo de arquivo não permitido. Use JPG, PNG, WebP, SVG ou ICO.", 400, "INVALID_FILE");
   }
-
-  const ext = extFromMime || extFromName;
   const buffer = await file.toBuffer();
   const max = env.UPLOAD_MAX_MB * 1024 * 1024;
   if (buffer.length > max) {

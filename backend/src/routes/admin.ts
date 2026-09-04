@@ -268,20 +268,32 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.put("/admin/products/:id", { preHandler: [requirePermission("products.manage")] }, async (req) => {
     const { id } = req.params as { id: string };
+    const exists = await prisma.product.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) throw notFound("Produto");
     const body = productBody.partial().parse(req.body);
     const { images, ...data } = body;
-    if (images) {
-      await prisma.productImage.deleteMany({ where: { productId: id } });
+    if (data.slug) {
+      const taken = await prisma.product.findFirst({ where: { slug: data.slug, NOT: { id } }, select: { id: true } });
+      if (taken) throw new AppError("Já existe outro produto com este slug.", 409, "CONFLICT");
     }
-    const updated = await prisma.product.update({
-      where: { id },
-      data: {
-        ...data,
-        images: images
-          ? { create: images.map((img, i) => ({ url: img.url, alt: img.alt, sortOrder: img.sortOrder ?? i })) }
-          : undefined,
-      },
-      include: { images: true, category: true },
+    if (data.categoryId) {
+      const cat = await prisma.category.findUnique({ where: { id: data.categoryId }, select: { id: true } });
+      if (!cat) throw new AppError("Categoria inválida. Selecione uma categoria existente.", 400);
+    }
+    const updated = await prisma.$transaction(async (tx) => {
+      if (images) {
+        await tx.productImage.deleteMany({ where: { productId: id } });
+      }
+      return tx.product.update({
+        where: { id },
+        data: {
+          ...data,
+          images: images
+            ? { create: images.filter((img) => img.url).map((img, i) => ({ url: img.url, alt: img.alt, sortOrder: img.sortOrder ?? i })) }
+            : undefined,
+        },
+        include: { images: true, category: true },
+      });
     });
     await audit(req, "update", "product", id);
     return updated;

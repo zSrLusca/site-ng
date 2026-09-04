@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, assetUrl } from "../../api";
+import { AdminError } from "../../components/admin/AdminError";
 import { useAuth } from "../../store/auth";
 
 function Field({
@@ -23,10 +24,12 @@ function Field({
 
 export function AdminSettings() {
   const token = useAuth((s) => s.token)!;
+  const qc = useQueryClient();
   const q = useQuery({ queryKey: ["admin-settings"], queryFn: () => api.authGet("/admin/settings", token) });
   const [form, setForm] = useState<Record<string, unknown>>({});
   const [ok, setOk] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
+  const [uploading, setUploading] = useState("");
   const [mpTest, setMpTest] = useState("");
 
   useEffect(() => {
@@ -40,30 +43,42 @@ export function AdminSettings() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("");
+    setError(null);
     try {
       const saved = await api.put("/admin/settings", form, token);
       setForm(saved);
+      qc.invalidateQueries({ queryKey: ["bootstrap"] });
+      qc.invalidateQueries({ queryKey: ["admin-settings"] });
       setOk("Configurações da loja salvas.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao salvar");
+      setError(err);
     }
   }
 
   async function upload(key: string, file: File) {
-    const res = await api.upload(file, "brand", token);
-    set(key, res.url);
+    setError(null);
+    setOk("");
+    setUploading(key);
+    try {
+      const res = await api.upload(file, "brand", token);
+      set(key, res.url);
+      setOk("Imagem enviada. Clique em Salvar configurações para aplicar na loja.");
+    } catch (err) {
+      setError(err);
+    } finally {
+      setUploading("");
+    }
   }
 
   async function testMp() {
     setMpTest("Testando conexão com o Mercado Pago...");
-    setError("");
+    setError(null);
     try {
       const res = await api.post("/admin/settings/mercadopago/test", {}, token);
       setMpTest(`Conectado: ${res.nickname || res.accountId} (${res.siteId || "MLB"})`);
     } catch (err) {
       setMpTest("");
-      setError(err instanceof Error ? err.message : "Falha no teste do Mercado Pago");
+      setError(err);
     }
   }
 
@@ -73,6 +88,7 @@ export function AdminSettings() {
         <h1>Configurações</h1>
         <button className="btn btn-primary" type="submit">Salvar configurações</button>
       </div>
+      <AdminError error={error} />
       <p style={{ color: "#8b9bb4" }}>
         Ambiente: {String(form.environment || "development")}. Tokens e secrets ficam só no{" "}
         <code>backend/.env</code> — nunca passam pelo navegador.
@@ -104,18 +120,54 @@ export function AdminSettings() {
           </div>
         </div>
         <div className="form-grid">
-          <Field label="Logo">
+          <div className="field">
+            <label>Logo</label>
             <label className="file-btn">
-              <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload("logo", e.target.files[0])} />
-              Enviar logo
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,.png,.jpg,.jpeg,.webp,.svg,.ico"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void upload("logo", file);
+                }}
+              />
+              {uploading === "logo" ? "Enviando..." : form.logo ? "Trocar logo" : "Enviar logo"}
             </label>
-          </Field>
-          <Field label="Favicon">
+            {form.logo ? (
+              <div className="thumb-row">
+                <div className="thumb">
+                  <img src={assetUrl(String(form.logo))} alt="Logo" />
+                  <button type="button" onClick={() => set("logo", "")}>×</button>
+                </div>
+              </div>
+            ) : null}
+            <small className="hint">Quadrada, 512×512. PNG ou WebP. Depois clique em Salvar.</small>
+          </div>
+          <div className="field">
+            <label>Favicon</label>
             <label className="file-btn">
-              <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload("favicon", e.target.files[0])} />
-              Enviar favicon
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,.png,.jpg,.jpeg,.webp,.svg,.ico"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void upload("favicon", file);
+                }}
+              />
+              {uploading === "favicon" ? "Enviando..." : form.favicon ? "Trocar favicon" : "Enviar favicon"}
             </label>
-          </Field>
+            {form.favicon ? (
+              <div className="thumb-row">
+                <div className="thumb">
+                  <img src={assetUrl(String(form.favicon))} alt="Favicon" />
+                  <button type="button" onClick={() => set("favicon", "")}>×</button>
+                </div>
+              </div>
+            ) : null}
+            <small className="hint">Quadrada, 512×512 PNG ou ICO 32×32. Depois clique em Salvar.</small>
+          </div>
         </div>
         <div className="check-row">
           <label className="check"><input type="checkbox" checked={!!form.checkoutRequireCpf} onChange={(e) => set("checkoutRequireCpf", e.target.checked)} /> Exigir CPF no checkout</label>
@@ -178,13 +230,13 @@ export function AdminSettings() {
           type="button"
           className="btn btn-ghost"
           onClick={async () => {
-            setError("");
+            setError(null);
             setOk("");
             try {
               await api.post("/admin/settings/fivem/test", form, token);
               setOk("Cidade respondeu. Entregas podem ser enviadas para a VPS.");
             } catch (err) {
-              setError(err instanceof Error ? err.message : "Falha ao falar com a cidade");
+              setError(err);
             }
           }}
         >
@@ -212,7 +264,7 @@ export function AdminSettings() {
         </div>
       </section>
 
-      {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
+      <AdminError error={error} />
       {ok && <p style={{ color: "var(--ok)" }}>{ok}</p>}
       <button className="btn btn-primary" type="submit">Salvar configurações</button>
     </form>
